@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Triage App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <header>
+        <h1>Hospital Triage App</h1>
+    </header>
+    <main>
+        <!-- Administrator View -->
+        <section id="admin-view">
+            <h2>Administrator View</h2>
+            <button id="refresh-queue">Refresh Queue</button>
+            <ul id="patient-list">
+                <!-- Patient list will be dynamically populated -->
+            </ul>
+        </section>
+
+        <!-- Patient View -->
+        <section id="patient-view">
+            <h2>Patient View</h2>
+            <form id="patient-form">
+                <label for="patient-name">Name:</label>
+                <input type="text" id="patient-name" placeholder="Enter your name" required>
+                <label for="patient-code">3-Letter Code:</label>
+                <input type="text" id="patient-code" maxlength="3" placeholder="ABC" required>
+                <button type="submit">Check Wait Time</button>
+            </form>
+            <p id="wait-time-display"></p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Hospital Triage App</p>
+    </footer>
+    <script src="js/script.js"></script>
+</body>
+</html>
