@@ -7,28 +7,33 @@ document.addEventListener('DOMContentLoaded', function () {
     const adminView = document.getElementById('admin-view');
     const patientView = document.getElementById('patient-view');
     const refreshButton = document.getElementById('refresh-queue');
-    const patientForm = document.getElementById('patient-form');
-    const addPatientForm = document.getElementById('add-patient-form');
     const patientTableBody = document.querySelector('#patient-table tbody');
+    const addPatientForm = document.getElementById('add-patient-form');
+
+    // Severity mappings to match database values
+    const severityMapping = { "High": 3, "Medium": 2, "Low": 1 };
+    const severityReverseMapping = { 3: "High", 2: "Medium", 1: "Low" };
 
     /**
      * Handle role selection changes to toggle UI views
      */
     roleSelector.addEventListener('change', function () {
-        // Conditional rendering based on the selected role
         switch (this.value) {
             case 'admin':
-                adminLogin.style.display = 'block'; // Display admin login form
-                adminView.style.display = 'none'; // Hide admin view until logged in
-                patientView.style.display = 'none'; // Hide patient view
+                // Show login form for admin
+                adminLogin.style.display = 'block';
+                adminView.style.display = 'none';
+                patientView.style.display = 'none';
                 break;
             case 'patient':
-                adminLogin.style.display = 'none'; // Hide admin login form
-                adminView.style.display = 'none'; // Hide admin view
-                patientView.style.display = 'block'; // Display patient view
+                // Show patient form for patient view
+                adminLogin.style.display = 'none';
+                adminView.style.display = 'none';
+                patientView.style.display = 'block';
                 break;
             default:
-                adminLogin.style.display = 'none'; // Hide all views by default
+                // Hide all views by default
+                adminLogin.style.display = 'none';
                 adminView.style.display = 'none';
                 patientView.style.display = 'none';
         }
@@ -56,9 +61,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 if (data.authenticated) {
+                    // Show admin view and fetch patients
                     adminLogin.style.display = 'none';
                     adminView.style.display = 'block';
-                    fetchPatients(); // Load patient data on successful login
+                    fetchPatients();
                 } else {
                     alert('Authentication failed. Please check your credentials.');
                 }
@@ -82,21 +88,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     row.innerHTML = `
                         <td>${patient.code}</td>
                         <td>${patient.name}</td>
-                        <td>${patient.severity}</td>
-                        <td>${patient.wait_time}</td>
+                        <td>${severityReverseMapping[patient.severity_of_injuries]}</td>
+                        <td>${patient.estimated_wait_time || 'N/A'}</td>
                         <td>${new Date(patient.arrival_time).toLocaleString()}</td>
                         <td>
-                            <button class="edit-patient" data-id="${patient.id}">Edit</button>
-                            <button class="delete-patient" data-id="${patient.id}">Delete</button>
+                            <button class="delete-patient" data-id="${patient.patient_id}">Delete</button>
                         </td>
                     `;
                     patientTableBody.appendChild(row);
                 });
-                addEventListenersToButtons(); // Add listeners to newly added buttons
+                addDeletePatientListeners(); // Add listeners to delete buttons
             })
-            .catch(error => {
-                console.error('Error fetching patients:', error);
-            });
+            .catch(error => console.error('Error fetching patients:', error));
     }
 
     /**
@@ -105,17 +108,22 @@ document.addEventListener('DOMContentLoaded', function () {
     addPatientForm.addEventListener('submit', function (event) {
         event.preventDefault();
         const name = document.getElementById('new-patient-name').value.trim();
-        const severity = document.getElementById('new-patient-severity').value;
-        const medicalIssue = document.getElementById('new-patient-issue').value.trim();
+        const severity = severityMapping[document.getElementById('new-patient-severity').value];
 
         fetch('/patients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, severity, medical_issue: medicalIssue })
+            body: JSON.stringify({ name, severity })
         })
-            .then(response => response.json())
-            .then(data => {
-                alert(`Patient added successfully with code: ${data.code}`);
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Error adding patient');
+                }
+            })
+            .then(() => {
+                alert('Patient added successfully.');
                 fetchPatients(); // Refresh the table
             })
             .catch(error => {
@@ -125,16 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /**
-     * Add event listeners to edit and delete buttons
+     * Add delete functionality to patient rows
      */
-    function addEventListenersToButtons() {
-        document.querySelectorAll('.edit-patient').forEach(button => {
-            button.addEventListener('click', function () {
-                const patientId = this.dataset.id;
-                editPatient(patientId);
-            });
-        });
-
+    function addDeletePatientListeners() {
         document.querySelectorAll('.delete-patient').forEach(button => {
             button.addEventListener('click', function () {
                 const patientId = this.dataset.id;
@@ -153,18 +154,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     alert('Patient deleted successfully.');
                     fetchPatients(); // Refresh the table
                 } else {
-                    alert('Failed to delete patient.');
+                    throw new Error('Error deleting patient');
                 }
             })
             .catch(error => {
                 console.error('Error deleting patient:', error);
+                alert('Failed to delete patient.');
             });
-    }
-
-    /**
-     * Function to edit a patient (Placeholder for future implementation)
-     */
-    function editPatient(patientId) {
-        alert(`Edit functionality for patient ID ${patientId} is under construction.`);
     }
 });
