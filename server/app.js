@@ -123,6 +123,47 @@ app.post("/patients", async (req, res) => {
     }
 });
 
+// API: Delete a Patient and Recalculate Wait Times
+app.delete("/patients/:id", async (req, res) => {
+    const patientId = req.params.id;
+
+    console.log(`Delete request received for patient ID: ${patientId}`);
+
+    try {
+        // Retrieve the severity of the patient to be deleted
+        const patientResult = await pool.query("SELECT severity_of_injuries FROM patients WHERE patient_id = $1", [patientId]);
+        console.log("Patient query result:", patientResult.rows);
+
+        if (patientResult.rows.length === 0) {
+            console.error(`Patient with ID ${patientId} not found`);
+            return res.status(404).send("Patient not found");
+        }
+
+        const severity = patientResult.rows[0].severity_of_injuries;
+        console.log(`Severity of patient to delete: ${severity}`);
+
+        // Delete the patient
+        await pool.query("DELETE FROM patients WHERE patient_id = $1", [patientId]);
+        console.log(`Patient with ID ${patientId} deleted`);
+
+        // Recalculate wait times for remaining patients
+        const patientsToUpdate = await pool.query("SELECT * FROM patients ORDER BY arrival_time ASC");
+        console.log("Patients to update:", patientsToUpdate.rows);
+
+        for (const patient of patientsToUpdate.rows) {
+            const newWaitTime = await calculateWaitTime(patient.severity_of_injuries);
+            console.log(`Updating wait time for patient ID ${patient.patient_id} to ${newWaitTime}`);
+            await pool.query("UPDATE patients SET estimated_wait_time = $1 WHERE patient_id = $2", [newWaitTime, patient.patient_id]);
+        }
+
+        console.log("All wait times updated successfully");
+        res.status(200).send("Patient deleted and wait times updated");
+    } catch (error) {
+        console.error("Error deleting patient:", error);
+        res.status(500).send("Error deleting patient");
+    }
+});
+
 // Start the Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
