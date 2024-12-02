@@ -1,4 +1,4 @@
-// Ensure the DOM is fully loaded before running the script
+ // Ensure the DOM is fully loaded before running the script
 document.addEventListener('DOMContentLoaded', function () {
     // Get references to UI elements
     const roleSelector = document.getElementById('role-selector');
@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', function () {
      * Function to authenticate administrator credentials
      */
     function authenticateAdmin(username, password) {
+        if (!username || !password) {
+            alert('Please enter both username and password.');
+            return;
+        }
         fetch('/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -80,6 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/patients')
             .then(response => response.json())
             .then(data => {
+                console.log('Fetched patients:', data); // Debugging
                 patientTableBody.innerHTML = '';
                 data.forEach(patient => {
                     const row = document.createElement('tr');
@@ -107,19 +112,17 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         const name = document.getElementById('new-patient-name').value.trim();
         const severity = severityMapping[document.getElementById('new-patient-severity').value];
+        if (!name || !severity) {
+            alert('Please provide both name and severity.');
+            return;
+        }
 
         fetch('/patients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, severity })
         })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('Error adding patient');
-                }
-            })
+            .then(response => response.json())
             .then(() => {
                 alert('Patient added successfully.');
                 fetchPatients();
@@ -128,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error adding patient:', error);
                 alert('Failed to add patient.');
             });
-    }
+    });
 
     /**
      * Add delete functionality to patient rows
@@ -137,7 +140,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.delete-patient').forEach(button => {
             button.addEventListener('click', function () {
                 const patientId = this.dataset.id;
-                console.log(`Delete button clicked for Patient ID: ${patientId}`); // Debugging
+                if (!patientId) {
+                    console.error('Invalid patient ID on delete button.');
+                    alert('Unable to delete. Invalid patient data.');
+                    return;
+                }
                 deletePatient(patientId);
             });
         });
@@ -147,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Function to delete a patient
      */
     function deletePatient(patientId) {
-        console.log(`Sending DELETE request for Patient ID: ${patientId}`); // Debugging
+        console.log(`Attempting to delete patient with ID: ${patientId}`); // Debugging
         fetch(`/patients/${patientId}`, { method: 'DELETE' })
             .then(response => {
                 if (response.ok) {
@@ -170,15 +177,13 @@ document.addEventListener('DOMContentLoaded', function () {
     patientForm.addEventListener('submit', function (event) {
         event.preventDefault();
         const code = document.getElementById('patient-code').value.trim().toUpperCase();
+        if (!code) {
+            alert('Please enter a valid code.');
+            return;
+        }
 
         fetch(`/patients/${code}`)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('Patient not found');
-                }
-            })
+            .then(response => response.json())
             .then(data => {
                 waitTimeDisplay.textContent = `Estimated Wait Time: ${data.estimated_wait_time} minutes.`;
             })
@@ -188,4 +193,3 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 });
- 

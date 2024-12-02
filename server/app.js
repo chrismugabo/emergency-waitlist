@@ -41,11 +41,11 @@ const generateCode = () => {
 };
 
 // Helper function to calculate dynamic wait time
-const calculateWaitTime = async (severity) => {
+const calculateWaitTime = async (severity, arrivalTime) => {
     try {
         const result = await pool.query(
-            "SELECT COUNT(*) AS count FROM patients WHERE severity_of_injuries >= $1",
-            [severity]
+            "SELECT COUNT(*) AS count FROM patients WHERE severity_of_injuries >= $1 AND arrival_time <= $2",
+            [severity, arrivalTime]
         );
         const patientsAhead = parseInt(result.rows[0].count, 10);
         const averageProcessingTime = 15; // Assume 15 minutes per patient
@@ -86,30 +86,13 @@ app.get("/patients", async (req, res) => {
     }
 });
 
-// API: Get Specific Patient's Wait Time by Code
-app.get("/patients/:code", async (req, res) => {
-    const code = req.params.code;
-
-    try {
-        const result = await pool.query("SELECT estimated_wait_time FROM patients WHERE code = $1", [code]);
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.status(404).send("Patient not found");
-        }
-    } catch (err) {
-        console.error("Error fetching patient wait time:", err);
-        res.status(500).send("Error fetching patient wait time");
-    }
-});
-
 // API: Add New Patient
 app.post("/patients", async (req, res) => {
     const { name, severity } = req.body;
     const code = generateCode();
 
     try {
-        const estimatedWaitTime = await calculateWaitTime(severity);
+        const estimatedWaitTime = await calculateWaitTime(severity, new Date());
 
         const result = await pool.query(
             `INSERT INTO patients (name, severity_of_injuries, code, estimated_wait_time, arrival_time) 
@@ -127,36 +110,24 @@ app.post("/patients", async (req, res) => {
 app.delete("/patients/:id", async (req, res) => {
     const patientId = req.params.id;
 
-    console.log(`Delete request received for patient ID: ${patientId}`);
-
     try {
-        // Retrieve the severity of the patient to be deleted
-        const patientResult = await pool.query("SELECT severity_of_injuries FROM patients WHERE patient_id = $1", [patientId]);
-        console.log("Patient query result:", patientResult.rows);
-
+        // Retrieve patient data to be deleted
+        const patientResult = await pool.query("SELECT * FROM patients WHERE patient_id = $1", [patientId]);
         if (patientResult.rows.length === 0) {
-            console.error(`Patient with ID ${patientId} not found`);
             return res.status(404).send("Patient not found");
         }
-
-        const severity = patientResult.rows[0].severity_of_injuries;
-        console.log(`Severity of patient to delete: ${severity}`);
+        const patientToDelete = patientResult.rows[0];
 
         // Delete the patient
         await pool.query("DELETE FROM patients WHERE patient_id = $1", [patientId]);
-        console.log(`Patient with ID ${patientId} deleted`);
 
         // Recalculate wait times for remaining patients
-        const patientsToUpdate = await pool.query("SELECT * FROM patients ORDER BY arrival_time ASC");
-        console.log("Patients to update:", patientsToUpdate.rows);
-
-        for (const patient of patientsToUpdate.rows) {
-            const newWaitTime = await calculateWaitTime(patient.severity_of_injuries);
-            console.log(`Updating wait time for patient ID ${patient.patient_id} to ${newWaitTime}`);
+        const remainingPatients = await pool.query("SELECT * FROM patients ORDER BY arrival_time ASC");
+        for (const patient of remainingPatients.rows) {
+            const newWaitTime = await calculateWaitTime(patient.severity_of_injuries, patient.arrival_time);
             await pool.query("UPDATE patients SET estimated_wait_time = $1 WHERE patient_id = $2", [newWaitTime, patient.patient_id]);
         }
 
-        console.log("All wait times updated successfully");
         res.status(200).send("Patient deleted and wait times updated");
     } catch (error) {
         console.error("Error deleting patient:", error);
