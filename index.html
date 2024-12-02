@@ -6,24 +6,75 @@
     <title>Hospital Triage App</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-
 </head>
 <body>
     <header>
         <h1>Hospital Triage App</h1>
+        <!-- Role selector for demonstration purposes -->
+        <select id="role-selector">
+            <option value="">Select Role</option>
+            <option value="admin">Administrator</option>
+            <option value="patient">Patient</option>
+        </select>
     </header>
     <main>
+        <!-- Admin Login Form -->
+        <div id="admin-login" style="display:none;">
+            <h2>Admin Login</h2>
+            <form id="admin-login-form">
+                <label for="admin-username">Username:</label>
+                <input type="text" id="admin-username" placeholder="Enter username" required>
+                <label for="admin-password">Password:</label>
+                <input type="password" id="admin-password" placeholder="Enter password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
         <!-- Administrator View -->
-        <section id="admin-view">
+        <section id="admin-view" style="display:none;">
             <h2>Administrator View</h2>
+            <!-- Refresh Queue Button -->
             <button id="refresh-queue">Refresh Queue</button>
-            <ul id="patient-list">
-                <!-- Patient list will be dynamically populated -->
-            </ul>
+            
+            <!-- Patient List Table -->
+            <table id="patient-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Severity</th>
+                        <th>Wait Time (mins)</th>
+                        <th>Arrival Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be dynamically populated -->
+                </tbody>
+            </table>
+
+            <!-- Add New Patient Form -->
+            <h3>Add New Patient</h3>
+            <form id="add-patient-form">
+                <label for="new-patient-name">Name:</label>
+                <input type="text" id="new-patient-name" placeholder="Enter patient name" required>
+
+                <label for="new-patient-severity">Severity:</label>
+                <select id="new-patient-severity" required>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+
+                <label for="new-patient-issue">Medical Issue:</label>
+                <textarea id="new-patient-issue" placeholder="Describe the medical issue" required></textarea>
+
+                <button type="submit">Add Patient</button>
+            </form>
         </section>
 
         <!-- Patient View -->
-        <section id="patient-view">
+        <section id="patient-view" style="display:none;">
             <h2>Patient View</h2>
             <form id="patient-form">
                 <label for="patient-name">Name:</label>
@@ -36,8 +87,8 @@
         </section>
     </main>
     <footer>
-        <p>&copy; 2024 Hospital Triage App</p>
+        <p>&copy; 2024 Chris Mugabo</p>
     </footer>
-    <script src="js/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

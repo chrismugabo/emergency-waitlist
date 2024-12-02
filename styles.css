@@ -5,31 +5,43 @@
     box-sizing: border-box;
 }
 
-/* Body and Container Styles */
+/* Font and Body Styles */
 body {
     font-family: 'Roboto', sans-serif;
-    background: #FAF9F6;
+    background: #f4f4f4;
     color: #333;
     line-height: 1.6;
     padding: 20px;
 }
 
+/* Header Styles */
 header {
+    background: #005a87; /* Dark blue shade */
+    color: #ffffff;
+    padding: 15px 20px;
     text-align: center;
-    background: #4CAF50;
-    color: white;
-    padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
-    font-family: 'Poppins', sans-serif;
 }
 
 header h1 {
     font-size: 2rem;
-    font-weight: 600; /* Bold for header */
+    margin-bottom: 10px;
 }
 
-/* Main Sections */
+header select {
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    margin-top: 10px;
+    max-width: 300px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Main Layout */
 main {
     display: flex;
     flex-direction: column;
@@ -37,97 +49,131 @@ main {
     gap: 20px;
 }
 
+/* Section Styles */
 section {
-    background: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
     border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    width: 100%;
     max-width: 600px;
-    text-align: center;
+    width: 100%;
 }
 
-section h2 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    color: #4CAF50;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-}
-
-/* Forms and Inputs */
+/* Form Styles */
 form {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-label {
+form label {
+    font-weight: bold;
+    margin-bottom: 5px;
     text-align: left;
-    font-weight: 500; /* Medium weight */
-    color: #555;
-    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    color: #333;
 }
 
-input {
+form input, form select, form textarea {
     padding: 10px;
     font-size: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 5px;
-    font-family: 'Roboto', sans-serif;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s;
 }
 
-input:focus {
+form input:focus, form select:focus, form textarea:focus {
+    border-color: #005a87;
     outline: none;
-    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(0, 90, 135, 0.2);
 }
 
-button {
-    background: #4CAF50;
+form textarea {
+    resize: vertical; /* Allow vertical resizing only */
+}
+
+form button {
+    background-color: #4CAF50;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px;
     border-radius: 5px;
+    font-size: 1rem;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    transition: background 0.3s ease;
+    transition: background-color 0.3s;
 }
 
-button:hover {
-    background: #388E3C;
+form button:hover {
+    background-color: #388E3C;
 }
 
-/* List Styles */
-ul {
-    list-style: none;
-    padding: 0;
-    margin: 10px 0;
+/* Patient Table Styles */
+#patient-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
 }
 
-li {
-    background: #f1f3f5;
+#patient-table th, #patient-table td {
     border: 1px solid #ddd;
     padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    font-family: 'Roboto', sans-serif;
-    transition: background 0.3s ease;
+    text-align: center;
+    font-size: 0.9rem;
 }
 
-li:hover {
-    background: #e8f5e9;
+#patient-table th {
+    background-color: #005a87;
+    color: white;
+    font-weight: bold;
+}
+
+#patient-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#patient-table tbody tr:hover {
+    background-color: #e8f5e9;
+}
+
+/* Wait Time Display */
+#wait-time-display {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 10px;
+    color: #005a87;
+    text-align: center;
 }
 
 /* Footer Styles */
 footer {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 40px;
     padding: 10px;
     color: white;
     background: #333;
     border-radius: 8px;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    header select {
+        width: 90%;
+    }
+
+    section {
+        width: 90%;
+    }
+
+    form input, form button, form select, form textarea {
+        width: 100%;
+    }
+
+    #patient-table th, #patient-table td {
+        font-size: 0.8rem;
+        padding: 8px;
+    }
 }
