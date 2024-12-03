@@ -155,17 +155,17 @@ footer {
 }
 
 /* Responsive Adjustments */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     header h1 {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
     }
 
     header select {
-        width: 90%;
+        width: 100%;
     }
 
     section {
-        width: 90%;
+        width: 95%;
     }
 
     form input, form button, form select, form textarea {
@@ -173,7 +173,25 @@ footer {
     }
 
     #patient-table th, #patient-table td {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         padding: 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    section {
+        width: 100%;
+    }
+
+    form input, form button, form select, form textarea {
+        font-size: 0.9rem;
+    }
+
+    #patient-table th, #patient-table td {
+        font-size: 0.8rem;
     }
 }
