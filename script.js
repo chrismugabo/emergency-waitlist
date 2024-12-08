@@ -1,50 +1,46 @@
  // Ensure the DOM is fully loaded before running the script
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
     // Get references to UI elements
-    const roleSelector = document.getElementById('role-selector');
-    const adminLogin = document.getElementById('admin-login');
-    const adminLoginForm = document.getElementById('admin-login-form');
-    const adminView = document.getElementById('admin-view');
-    const patientView = document.getElementById('patient-view');
-    const refreshButton = document.getElementById('refresh-queue');
-    const patientTableBody = document.querySelector('#patient-table tbody');
-    const addPatientForm = document.getElementById('add-patient-form');
-    const patientForm = document.getElementById('patient-form');
-    const waitTimeDisplay = document.getElementById('wait-time-display');
-
-    // Severity mappings to match database values
-    const severityMapping = { "High": 3, "Medium": 2, "Low": 1 };
-    const severityReverseMapping = { 3: "High", 2: "Medium", 1: "Low" };
+    const roleSelector = document.getElementById("role-selector");
+    const adminLogin = document.getElementById("admin-login");
+    const adminLoginForm = document.getElementById("admin-login-form");
+    const adminView = document.getElementById("admin-view");
+    const patientView = document.getElementById("patient-view");
+    const refreshButton = document.getElementById("refresh-queue");
+    const patientTableBody = document.querySelector("#patient-table tbody");
+    const addPatientForm = document.getElementById("add-patient-form");
+    const patientForm = document.getElementById("patient-form");
+    const waitTimeDisplay = document.getElementById("wait-time-display");
 
     /**
      * Handle role selection changes to toggle UI views
      */
-    roleSelector.addEventListener('change', function () {
+    roleSelector.addEventListener("change", function () {
         switch (this.value) {
-            case 'admin':
-                adminLogin.style.display = 'block';
-                adminView.style.display = 'none';
-                patientView.style.display = 'none';
+            case "admin":
+                adminLogin.style.display = "block";
+                adminView.style.display = "none";
+                patientView.style.display = "none";
                 break;
-            case 'patient':
-                adminLogin.style.display = 'none';
-                adminView.style.display = 'none';
-                patientView.style.display = 'block';
+            case "patient":
+                adminLogin.style.display = "none";
+                adminView.style.display = "none";
+                patientView.style.display = "block";
                 break;
             default:
-                adminLogin.style.display = 'none';
-                adminView.style.display = 'none';
-                patientView.style.display = 'none';
+                adminLogin.style.display = "none";
+                adminView.style.display = "none";
+                patientView.style.display = "none";
         }
     });
 
     /**
      * Handle admin login form submission
      */
-    adminLoginForm.addEventListener('submit', function (event) {
+    adminLoginForm.addEventListener("submit", function (event) {
         event.preventDefault();
-        const username = document.getElementById('admin-username').value.trim();
-        const password = document.getElementById('admin-password').value.trim();
+        const username = document.getElementById("admin-username").value.trim();
+        const password = document.getElementById("admin-password").value.trim();
         authenticateAdmin(username, password);
     });
 
@@ -53,27 +49,27 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function authenticateAdmin(username, password) {
         if (!username || !password) {
-            alert('Please enter both username and password.');
+            alert("Please enter both username and password.");
             return;
         }
-        fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+        fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
         })
-            .then(response => response.json())
-            .then(data => {
+            .then((response) => response.json())
+            .then((data) => {
                 if (data.authenticated) {
-                    adminLogin.style.display = 'none';
-                    adminView.style.display = 'block';
+                    adminLogin.style.display = "none";
+                    adminView.style.display = "block";
                     fetchPatients();
                 } else {
-                    alert('Authentication failed. Please check your credentials.');
+                    alert("Authentication failed. Please check your credentials.");
                 }
             })
-            .catch(error => {
-                console.error('Authentication error:', error);
-                alert('Error logging in. Please try again later.');
+            .catch((error) => {
+                console.error("Authentication error:", error);
+                alert("Error logging in. Please try again later.");
             });
     }
 
@@ -81,115 +77,123 @@ document.addEventListener('DOMContentLoaded', function () {
      * Fetch all patients and populate the admin table
      */
     function fetchPatients() {
-        fetch('/patients')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Fetched patients:', data); // Debugging
-                patientTableBody.innerHTML = '';
-                data.forEach(patient => {
-                    const row = document.createElement('tr');
+        fetch("/patients")
+            .then((response) => response.json())
+            .then((data) => {
+                patientTableBody.innerHTML = "";
+                data.forEach((patient) => {
+                    const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${patient.code}</td>
+                        <td>${patient.patient_id}</td>
                         <td>${patient.name}</td>
-                        <td>${severityReverseMapping[patient.severity_of_injuries]}</td>
-                        <td>${patient.estimated_wait_time || 'N/A'}</td>
+                        <td>${patient.injury_type}</td>
+                        <td>${patient.pain_level}</td>
+                        <td>${patient.necessary_attention}</td>
+                        <td>${patient.estimated_wait_time || "N/A"}</td>
                         <td>${new Date(patient.arrival_time).toLocaleString()}</td>
                         <td>
+                            <button class="increase-attention" data-id="${patient.patient_id}">Increase</button>
+                            <button class="decrease-attention" data-id="${patient.patient_id}">Decrease</button>
                             <button class="delete-patient" data-id="${patient.patient_id}">Delete</button>
                         </td>
                     `;
                     patientTableBody.appendChild(row);
                 });
-                addDeletePatientListeners();
+                addPatientActionListeners();
             })
-            .catch(error => console.error('Error fetching patients:', error));
+            .catch((error) => console.error("Error fetching patients:", error));
     }
 
     /**
      * Handle "Add Patient" form submission
      */
-    addPatientForm.addEventListener('submit', function (event) {
+    addPatientForm.addEventListener("submit", function (event) {
         event.preventDefault();
-        const name = document.getElementById('new-patient-name').value.trim();
-        const severity = severityMapping[document.getElementById('new-patient-severity').value];
-        if (!name || !severity) {
-            alert('Please provide both name and severity.');
+        const name = document.getElementById("new-patient-name").value.trim();
+        const injuryType = document.getElementById("new-patient-injury").value.trim();
+        const painLevel = document.getElementById("new-patient-severity").value;
+
+        if (!name || !injuryType || !painLevel) {
+            alert("Please provide all required fields.");
             return;
         }
 
-        fetch('/patients', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, severity })
+        fetch("/patients", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, injuryType, painLevel }),
         })
-            .then(response => response.json())
+            .then((response) => response.json())
             .then(() => {
-                alert('Patient added successfully.');
+                alert("Patient added successfully.");
                 fetchPatients();
             })
-            .catch(error => {
-                console.error('Error adding patient:', error);
-                alert('Failed to add patient.');
+            .catch((error) => {
+                console.error("Error adding patient:", error);
+                alert("Failed to add patient.");
             });
     });
 
     /**
-     * Add delete functionality to patient rows
+     * Add action listeners for patient table buttons
      */
-    function addDeletePatientListeners() {
-        document.querySelectorAll('.delete-patient').forEach(button => {
-            button.addEventListener('click', function () {
+    function addPatientActionListeners() {
+        document.querySelectorAll(".increase-attention").forEach((button) => {
+            button.addEventListener("click", function () {
                 const patientId = this.dataset.id;
-                if (!patientId) {
-                    console.error('Invalid patient ID on delete button.');
-                    alert('Unable to delete. Invalid patient data.');
-                    return;
-                }
+                updateAttention(patientId, 1);
+            });
+        });
+
+        document.querySelectorAll(".decrease-attention").forEach((button) => {
+            button.addEventListener("click", function () {
+                const patientId = this.dataset.id;
+                updateAttention(patientId, -1);
+            });
+        });
+
+        document.querySelectorAll(".delete-patient").forEach((button) => {
+            button.addEventListener("click", function () {
+                const patientId = this.dataset.id;
                 deletePatient(patientId);
             });
         });
     }
 
     /**
-     * Function to delete a patient
+     * Update necessary attention level
      */
-    function deletePatient(patientId) {
-        console.log(`Attempting to delete patient with ID: ${patientId}`); // Debugging
-        fetch(`/patients/${patientId}`, { method: 'DELETE' })
-            .then(response => {
-                if (response.ok) {
-                    alert('Patient deleted successfully.');
-                    fetchPatients();
-                } else {
-                    console.error(`Failed to delete patient with ID: ${patientId}`);
-                    throw new Error('Error deleting patient');
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting patient:', error);
-                alert('Failed to delete patient.');
+    function updateAttention(patientId, change) {
+        fetch(`/patients/${patientId}/attention`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ change }),
+        })
+            .then((response) => response.json())
+            .then(() => fetchPatients())
+            .catch((error) => {
+                console.error("Error updating attention level:", error);
+                alert("Failed to update attention level.");
             });
     }
 
     /**
-     * Handle patient form submission to check wait time
+     * Function to delete a patient
      */
-    patientForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-        const code = document.getElementById('patient-code').value.trim().toUpperCase();
-        if (!code) {
-            alert('Please enter a valid code.');
-            return;
-        }
-
-        fetch(`/patients/${code}`)
-            .then(response => response.json())
-            .then(data => {
-                waitTimeDisplay.textContent = `Estimated Wait Time: ${data.estimated_wait_time} minutes.`;
+    function deletePatient(patientId) {
+        fetch(`/patients/${patientId}`, { method: "DELETE" })
+            .then((response) => {
+                if (response.ok) {
+                    alert("Patient deleted successfully.");
+                    fetchPatients();
+                } else {
+                    console.error(`Failed to delete patient with ID: ${patientId}`);
+                    throw new Error("Error deleting patient");
+                }
             })
-            .catch(error => {
-                console.error('Error fetching wait time:', error);
-                waitTimeDisplay.textContent = 'Patient not found or an error occurred.';
+            .catch((error) => {
+                console.error("Error deleting patient:", error);
+                alert("Failed to delete patient.");
             });
-    });
+    }
 });

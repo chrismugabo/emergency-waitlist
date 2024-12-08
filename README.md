@@ -15,6 +15,7 @@ Follow these steps to set up and run the application locally:
 - Install [Git](https://git-scm.com/) to clone the repository.
 - Use a code editor like [VS Code](https://code.visualstudio.com/).
 
+
 #### **Steps**
 1. Clone the repository:
    ```bash

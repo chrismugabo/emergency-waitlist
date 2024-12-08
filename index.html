@@ -9,8 +9,10 @@
 </head>
 <body>
     <header>
-        <h1>Hospital Triage App</h1>
-        <!-- Role selector for demonstration purposes -->
+        <h1 id="page-title" style="text-align: center; font-size: 2rem;">Hospital Triage App</h1>
+        <p id="page-description" style="text-align: center; font-size: 1.2rem;">
+            Please select your role below to proceed.
+        </p>
         <select id="role-selector">
             <option value="">Select Role</option>
             <option value="admin">Administrator</option>
@@ -20,7 +22,8 @@
     <main>
         <!-- Admin Login Form -->
         <div id="admin-login" style="display:none;">
-            <h2>Admin Login</h2>
+            <h2 style="text-align: center;">Hospital Triage - Admin</h2>
+            <p style="text-align: center;">Login to manage the triage queue, prioritize patients, and adjust necessary attention levels.</p>
             <form id="admin-login-form">
                 <label for="admin-username">Username:</label>
                 <input type="text" id="admin-username" placeholder="Enter username" required>
@@ -32,59 +35,59 @@
 
         <!-- Administrator View -->
         <section id="admin-view" style="display:none;">
-            <h2>Administrator View</h2>
-            <!-- Refresh Queue Button -->
-            <button id="refresh-queue">Refresh Queue</button>
-            
-            <!-- Patient List Table -->
+            <h2 style="text-align: center;">Hospital Triage - Admin</h2>
+            <p style="text-align: center;">Manage the patient list below by adjusting necessary attention levels or removing patients.</p>
+            <button id="refresh-queue" style="display: block; margin: 10px auto;">Refresh Queue</button>
             <table id="patient-table">
                 <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Severity</th>
-                        <th>Wait Time (mins)</th>
-                        <th>Arrival Time</th>
+                        <th>Entry Number</th>
+                        <th>Injury Type</th>
+                        <th>Pain Level</th>
+                        <th>Necessary Attention</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Rows will be dynamically populated -->
+                    <!-- Rows dynamically populated -->
                 </tbody>
             </table>
-
-            <!-- Add New Patient Form -->
-            <h3>Add New Patient</h3>
-            <form id="add-patient-form">
-                <label for="new-patient-name">Name:</label>
-                <input type="text" id="new-patient-name" placeholder="Enter patient name" required>
-
-                <label for="new-patient-severity">Severity:</label>
-                <select id="new-patient-severity" required>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                </select>
-
-                <button type="submit">Add Patient</button>
-            </form>
         </section>
 
         <!-- Patient View -->
         <section id="patient-view" style="display:none;">
-            <h2>Patient View</h2>
-            <form id="patient-form">
-                <label for="patient-name">Name:</label>
-                <input type="text" id="patient-name" placeholder="Enter your name" required>
-                <label for="patient-code">3-Letter Code:</label>
-                <input type="text" id="patient-code" maxlength="3" placeholder="ABC" required>
-                <button type="submit">Check Wait Time</button>
+            <h2 style="text-align: center;">Hospital Triage - User</h2>
+            <p style="text-align: center;">Select your type of injury and pain level, then submit your information to the triage system.</p>
+            <form id="user-form">
+                <h3 style="text-align: center;">Type of Injury:</h3>
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                    <button type="button" class="injury-btn" value="Head">Head</button>
+                    <button type="button" class="injury-btn" value="Heart">Heart</button>
+                    <button type="button" class="injury-btn" value="Lung">Lung</button>
+                    <button type="button" class="injury-btn" value="Neck">Neck</button>
+                    <button type="button" class="injury-btn" value="Stomach">Stomach</button>
+                    <button type="button" class="injury-btn" value="Bone or Muscle">Bone or Muscle</button>
+                    <button type="button" class="injury-btn" value="Burn or Cut">Burn or Cut</button>
+                </div>
+                <h3 style="text-align: center; margin-top: 20px;">Level of Pain:</h3>
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                    <button type="button" class="pain-btn" value="1">1 (Not bad)</button>
+                    <button type="button" class="pain-btn" value="2">2</button>
+                    <button type="button" class="pain-btn" value="3">3</button>
+                    <button type="button" class="pain-btn" value="4">4</button>
+                    <button type="button" class="pain-btn" value="5">5</button>
+                    <button type="button" class="pain-btn" value="6">6</button>
+                    <button type="button" class="pain-btn" value="7">7</button>
+                    <button type="button" class="pain-btn" value="8">8</button>
+                    <button type="button" class="pain-btn" value="9">9</button>
+                    <button type="button" class="pain-btn" value="10">10 (Unbearable)</button>
+                </div>
+                <button type="submit" style="display: block; margin: 20px auto;">Submit Entry</button>
             </form>
-            <p id="wait-time-display"></p>
         </section>
     </main>
     <footer>
-        <p>&copy; 2024 Chris Mugabo</p>
+        <p style="text-align: center;">&copy; 2024 Chris Mugabo</p>
     </footer>
     <script src="script.js"></script>
 </body>

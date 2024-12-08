@@ -41,11 +41,11 @@ const generateCode = () => {
 };
 
 // Helper function to calculate dynamic wait time
-const calculateWaitTime = async (severity, arrivalTime) => {
+const calculateWaitTime = async (painLevel, arrivalTime) => {
     try {
         const result = await pool.query(
-            "SELECT COUNT(*) AS count FROM patients WHERE severity_of_injuries >= $1 AND arrival_time <= $2",
-            [severity, arrivalTime]
+            "SELECT COUNT(*) AS count FROM patients WHERE pain_level >= $1 AND arrival_time <= $2",
+            [painLevel, arrivalTime]
         );
         const patientsAhead = parseInt(result.rows[0].count, 10);
         const averageProcessingTime = 15; // Assume 15 minutes per patient
@@ -78,7 +78,9 @@ app.post("/api/admin/login", async (req, res) => {
 // API: Fetch All Patients
 app.get("/patients", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM patients ORDER BY arrival_time ASC");
+        const result = await pool.query(
+            "SELECT patient_id, name, injury_type, pain_level, necessary_attention, estimated_wait_time, arrival_time FROM patients ORDER BY arrival_time ASC"
+        );
         res.json(result.rows);
     } catch (err) {
         console.error("Error fetching patients:", err);
@@ -88,21 +90,42 @@ app.get("/patients", async (req, res) => {
 
 // API: Add New Patient
 app.post("/patients", async (req, res) => {
-    const { name, severity } = req.body;
+    const { name, injuryType, painLevel } = req.body;
     const code = generateCode();
 
     try {
-        const estimatedWaitTime = await calculateWaitTime(severity, new Date());
+        const estimatedWaitTime = await calculateWaitTime(painLevel, new Date());
 
         const result = await pool.query(
-            `INSERT INTO patients (name, severity_of_injuries, code, estimated_wait_time, arrival_time) 
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [name, severity, code, estimatedWaitTime, new Date()]
+            `INSERT INTO patients (name, injury_type, pain_level, code, estimated_wait_time, arrival_time) 
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [name, injuryType, painLevel, code, estimatedWaitTime, new Date()]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error("Error adding patient:", error);
         res.status(500).send("Error adding patient");
+    }
+});
+
+// API: Update Necessary Attention
+app.put("/patients/:id/attention", async (req, res) => {
+    const patientId = req.params.id;
+    const { change } = req.body; // `change` should be +1 or -1
+
+    try {
+        const result = await pool.query(
+            "UPDATE patients SET necessary_attention = GREATEST(0, necessary_attention + $1) WHERE patient_id = $2 RETURNING *",
+            [change, patientId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).send("Patient not found");
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error("Error updating attention level:", error);
+        res.status(500).send("Error updating attention level");
     }
 });
 
@@ -116,7 +139,6 @@ app.delete("/patients/:id", async (req, res) => {
         if (patientResult.rows.length === 0) {
             return res.status(404).send("Patient not found");
         }
-        const patientToDelete = patientResult.rows[0];
 
         // Delete the patient
         await pool.query("DELETE FROM patients WHERE patient_id = $1", [patientId]);
@@ -124,7 +146,7 @@ app.delete("/patients/:id", async (req, res) => {
         // Recalculate wait times for remaining patients
         const remainingPatients = await pool.query("SELECT * FROM patients ORDER BY arrival_time ASC");
         for (const patient of remainingPatients.rows) {
-            const newWaitTime = await calculateWaitTime(patient.severity_of_injuries, patient.arrival_time);
+            const newWaitTime = await calculateWaitTime(patient.pain_level, patient.arrival_time);
             await pool.query("UPDATE patients SET estimated_wait_time = $1 WHERE patient_id = $2", [newWaitTime, patient.patient_id]);
         }
 
@@ -132,6 +154,22 @@ app.delete("/patients/:id", async (req, res) => {
     } catch (error) {
         console.error("Error deleting patient:", error);
         res.status(500).send("Error deleting patient");
+    }
+});
+
+// API: Log Admin Actions
+app.post("/admin/actions", async (req, res) => {
+    const { adminId, patientId, action } = req.body;
+
+    try {
+        await pool.query(
+            `INSERT INTO admin_actions (admin_id, patient_id, action, action_time) VALUES ($1, $2, $3, NOW())`,
+            [adminId, patientId, action]
+        );
+        res.status(201).send("Action logged successfully");
+    } catch (error) {
+        console.error("Error logging admin action:", error);
+        res.status(500).send("Error logging admin action");
     }
 });
 
