@@ -93,7 +93,7 @@ form textarea {
 }
 
 form button {
-    background-color: #4CAF50;
+    background-color: #4CAF50; /* Green background */
     color: white;
     border: none;
     padding: 12px;
@@ -104,7 +104,7 @@ form button {
 }
 
 form button:hover {
-    background-color: #388E3C;
+    background-color: #388E3C; /* Darker green on hover */
 }
 
 /* Buttons for Injury and Pain Levels */
@@ -122,6 +122,22 @@ form button:hover {
 .injury-btn:hover, .pain-btn:hover {
     background-color: #388E3C; /* Darker green on hover */
     color: white;
+}
+
+/* Priority Buttons for Admin */
+#increase-priority, #decrease-priority {
+    background-color: #005a87;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+#increase-priority:hover, #decrease-priority:hover {
+    background-color: #004970; /* Darker blue */
 }
 
 /* Patient Table Styles */

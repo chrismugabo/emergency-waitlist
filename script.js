@@ -1,4 +1,4 @@
- // Ensure the DOM is fully loaded before running the script
+// Ensure the DOM is fully loaded before running the script
 document.addEventListener("DOMContentLoaded", function () {
     // Get references to UI elements
     const roleSelector = document.getElementById("role-selector");
@@ -6,23 +6,36 @@ document.addEventListener("DOMContentLoaded", function () {
     const adminLoginForm = document.getElementById("admin-login-form");
     const adminView = document.getElementById("admin-view");
     const patientView = document.getElementById("patient-view");
-    const refreshButton = document.getElementById("refresh-queue");
     const patientTableBody = document.querySelector("#patient-table tbody");
-    const addPatientForm = document.getElementById("add-patient-form");
-    const patientForm = document.getElementById("patient-form");
-    const waitTimeDisplay = document.getElementById("wait-time-display");
+
+    let selectedInjury = null;
+    let selectedPainLevel = null;
+
+    /**
+     * Check if admin is already logged in
+     */
+    if (localStorage.getItem("adminLoggedIn") === "true") {
+        showAdminView();
+    }
 
     /**
      * Handle role selection changes to toggle UI views
      */
     roleSelector.addEventListener("change", function () {
+        const pageTitle = document.getElementById("page-title");
+        const pageDescription = document.getElementById("page-description");
+
         switch (this.value) {
             case "admin":
+                pageTitle.textContent = "Hospital Triage - Admin";
+                pageDescription.textContent = "Login to manage the triage queue, prioritize patients, and adjust necessary attention levels.";
                 adminLogin.style.display = "block";
                 adminView.style.display = "none";
                 patientView.style.display = "none";
                 break;
             case "patient":
+                pageTitle.textContent = "Hospital Triage - User";
+                pageDescription.textContent = "Select your type of injury and pain level, then submit your information to the triage system.";
                 adminLogin.style.display = "none";
                 adminView.style.display = "none";
                 patientView.style.display = "block";
@@ -60,9 +73,8 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((response) => response.json())
             .then((data) => {
                 if (data.authenticated) {
-                    adminLogin.style.display = "none";
-                    adminView.style.display = "block";
-                    fetchPatients();
+                    localStorage.setItem("adminLoggedIn", "true"); // Store login state
+                    showAdminView();
                 } else {
                     alert("Authentication failed. Please check your credentials.");
                 }
@@ -71,6 +83,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Authentication error:", error);
                 alert("Error logging in. Please try again later.");
             });
+    }
+
+    /**
+     * Display the admin view and fetch patient data
+     */
+    function showAdminView() {
+        adminLogin.style.display = "none";
+        adminView.style.display = "block";
+        patientView.style.display = "none";
+        fetchPatients();
     }
 
     /**
@@ -89,8 +111,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         <td>${patient.injury_type}</td>
                         <td>${patient.pain_level}</td>
                         <td>${patient.necessary_attention}</td>
-                        <td>${patient.estimated_wait_time || "N/A"}</td>
-                        <td>${new Date(patient.arrival_time).toLocaleString()}</td>
                         <td>
                             <button class="increase-attention" data-id="${patient.patient_id}">Increase</button>
                             <button class="decrease-attention" data-id="${patient.patient_id}">Decrease</button>
@@ -103,36 +123,6 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch((error) => console.error("Error fetching patients:", error));
     }
-
-    /**
-     * Handle "Add Patient" form submission
-     */
-    addPatientForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        const name = document.getElementById("new-patient-name").value.trim();
-        const injuryType = document.getElementById("new-patient-injury").value.trim();
-        const painLevel = document.getElementById("new-patient-severity").value;
-
-        if (!name || !injuryType || !painLevel) {
-            alert("Please provide all required fields.");
-            return;
-        }
-
-        fetch("/patients", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, injuryType, painLevel }),
-        })
-            .then((response) => response.json())
-            .then(() => {
-                alert("Patient added successfully.");
-                fetchPatients();
-            })
-            .catch((error) => {
-                console.error("Error adding patient:", error);
-                alert("Failed to add patient.");
-            });
-    });
 
     /**
      * Add action listeners for patient table buttons
@@ -178,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Function to delete a patient
+     * Delete a patient
      */
     function deletePatient(patientId) {
         fetch(`/patients/${patientId}`, { method: "DELETE" })

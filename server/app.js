@@ -34,12 +34,6 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../index.html"));
 });
 
-// Helper function to generate unique 3-letter codes
-const generateCode = () => {
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    return Array.from({ length: 3 }, () => letters[Math.floor(Math.random() * letters.length)]).join("");
-};
-
 // Helper function to calculate dynamic wait time
 const calculateWaitTime = async (painLevel, arrivalTime) => {
     try {
@@ -91,15 +85,14 @@ app.get("/patients", async (req, res) => {
 // API: Add New Patient
 app.post("/patients", async (req, res) => {
     const { name, injuryType, painLevel } = req.body;
-    const code = generateCode();
 
     try {
         const estimatedWaitTime = await calculateWaitTime(painLevel, new Date());
 
         const result = await pool.query(
-            `INSERT INTO patients (name, injury_type, pain_level, code, estimated_wait_time, arrival_time) 
+            `INSERT INTO patients (name, injury_type, pain_level, necessary_attention, estimated_wait_time, arrival_time) 
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [name, injuryType, painLevel, code, estimatedWaitTime, new Date()]
+            [name, injuryType, painLevel, 0, estimatedWaitTime, new Date()]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
