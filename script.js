@@ -1,108 +1,82 @@
-// Ensure the DOM is fully loaded before running the script
 document.addEventListener("DOMContentLoaded", function () {
-    // Get references to UI elements
     const roleSelector = document.getElementById("role-selector");
     const adminLogin = document.getElementById("admin-login");
-    const adminLoginForm = document.getElementById("admin-login-form");
     const adminView = document.getElementById("admin-view");
     const patientView = document.getElementById("patient-view");
     const patientTableBody = document.querySelector("#patient-table tbody");
+    const waitTimeDisplay = document.getElementById("wait-time-display");
+    const patientForm = document.getElementById("user-form");
 
     let selectedInjury = null;
     let selectedPainLevel = null;
 
     /**
-     * Check if admin is already logged in
+     * Reset the landing page to hide all views
      */
-    if (localStorage.getItem("adminLoggedIn") === "true") {
-        showAdminView();
+    function resetLandingPage() {
+        adminLogin.style.display = "none";
+        adminView.style.display = "none";
+        patientView.style.display = "none";
     }
 
+    // Reset landing page on initial load
+    resetLandingPage();
+
     /**
-     * Handle role selection changes to toggle UI views
+     * Handle role selection and toggle views
      */
     roleSelector.addEventListener("change", function () {
-        const pageTitle = document.getElementById("page-title");
-        const pageDescription = document.getElementById("page-description");
-
+        resetLandingPage(); // Hide all views first
         switch (this.value) {
             case "admin":
-                pageTitle.textContent = "Hospital Triage - Admin";
-                pageDescription.textContent = "Login to manage the triage queue, prioritize patients, and adjust necessary attention levels.";
                 adminLogin.style.display = "block";
-                adminView.style.display = "none";
-                patientView.style.display = "none";
                 break;
             case "patient":
-                pageTitle.textContent = "Hospital Triage - User";
-                pageDescription.textContent = "Select your type of injury and pain level, then submit your information to the triage system.";
-                adminLogin.style.display = "none";
-                adminView.style.display = "none";
                 patientView.style.display = "block";
                 break;
             default:
-                adminLogin.style.display = "none";
-                adminView.style.display = "none";
-                patientView.style.display = "none";
+                resetLandingPage(); // Go back to default view
         }
     });
 
     /**
      * Handle admin login form submission
      */
-    adminLoginForm.addEventListener("submit", function (event) {
+    document.getElementById("admin-login-form").addEventListener("submit", function (event) {
         event.preventDefault();
         const username = document.getElementById("admin-username").value.trim();
         const password = document.getElementById("admin-password").value.trim();
-        authenticateAdmin(username, password);
-    });
 
-    /**
-     * Function to authenticate administrator credentials
-     */
-    function authenticateAdmin(username, password) {
-        if (!username || !password) {
-            alert("Please enter both username and password.");
-            return;
-        }
         fetch("/api/admin/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
         })
-            .then((response) => response.json())
+            .then((res) => res.json())
             .then((data) => {
                 if (data.authenticated) {
-                    localStorage.setItem("adminLoggedIn", "true"); // Store login state
-                    showAdminView();
+                    alert("Login successful!");
+                    adminLogin.style.display = "none";
+                    adminView.style.display = "block";
+                    fetchPatients();
                 } else {
-                    alert("Authentication failed. Please check your credentials.");
+                    alert("Invalid credentials");
                 }
             })
             .catch((error) => {
-                console.error("Authentication error:", error);
-                alert("Error logging in. Please try again later.");
+                console.error("Error during login:", error);
             });
-    }
-
-    /**
-     * Display the admin view and fetch patient data
-     */
-    function showAdminView() {
-        adminLogin.style.display = "none";
-        adminView.style.display = "block";
-        patientView.style.display = "none";
-        fetchPatients();
-    }
+    });
 
     /**
      * Fetch all patients and populate the admin table
      */
     function fetchPatients() {
         fetch("/patients")
-            .then((response) => response.json())
+            .then((res) => res.json())
             .then((data) => {
-                patientTableBody.innerHTML = "";
+                patientTableBody.innerHTML = ""; // Clear table before populating
+
                 data.forEach((patient) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
@@ -111,6 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <td>${patient.injury_type}</td>
                         <td>${patient.pain_level}</td>
                         <td>${patient.necessary_attention}</td>
+                        <td>${patient.estimated_wait_time || "N/A"} minutes</td>
                         <td>
                             <button class="increase-attention" data-id="${patient.patient_id}">Increase</button>
                             <button class="decrease-attention" data-id="${patient.patient_id}">Decrease</button>
@@ -119,39 +94,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                     patientTableBody.appendChild(row);
                 });
-                addPatientActionListeners();
+
+                addActionListeners(); // Add event listeners to buttons
             })
-            .catch((error) => console.error("Error fetching patients:", error));
+            .catch((error) => {
+                console.error("Error fetching patients:", error);
+            });
     }
 
     /**
-     * Add action listeners for patient table buttons
+     * Add event listeners to admin action buttons
      */
-    function addPatientActionListeners() {
+    function addActionListeners() {
         document.querySelectorAll(".increase-attention").forEach((button) => {
-            button.addEventListener("click", function () {
-                const patientId = this.dataset.id;
-                updateAttention(patientId, 1);
-            });
+            button.addEventListener("click", () => updateAttention(button.dataset.id, 1));
         });
 
         document.querySelectorAll(".decrease-attention").forEach((button) => {
-            button.addEventListener("click", function () {
-                const patientId = this.dataset.id;
-                updateAttention(patientId, -1);
-            });
+            button.addEventListener("click", () => updateAttention(button.dataset.id, -1));
         });
 
         document.querySelectorAll(".delete-patient").forEach((button) => {
-            button.addEventListener("click", function () {
-                const patientId = this.dataset.id;
-                deletePatient(patientId);
-            });
+            button.addEventListener("click", () => deletePatient(button.dataset.id));
         });
     }
 
     /**
-     * Update necessary attention level
+     * Update attention level for a patient
      */
     function updateAttention(patientId, change) {
         fetch(`/patients/${patientId}/attention`, {
@@ -159,31 +128,72 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ change }),
         })
-            .then((response) => response.json())
-            .then(() => fetchPatients())
+            .then((res) => res.json())
+            .then((data) => {
+                alert("Attention updated successfully!");
+                fetchPatients(); // Refresh the patient list
+            })
             .catch((error) => {
-                console.error("Error updating attention level:", error);
-                alert("Failed to update attention level.");
+                console.error("Error updating attention:", error);
             });
     }
 
     /**
-     * Delete a patient
+     * Delete a patient and refresh the table
      */
     function deletePatient(patientId) {
-        fetch(`/patients/${patientId}`, { method: "DELETE" })
-            .then((response) => {
-                if (response.ok) {
-                    alert("Patient deleted successfully.");
-                    fetchPatients();
-                } else {
-                    console.error(`Failed to delete patient with ID: ${patientId}`);
-                    throw new Error("Error deleting patient");
-                }
+        if (confirm("Are you sure you want to delete this patient?")) {
+            fetch(`/patients/${patientId}`, { method: "DELETE" })
+                .then(() => {
+                    alert("Patient deleted successfully!");
+                    fetchPatients(); // Refresh the patient list
+                })
+                .catch((error) => {
+                    console.error("Error deleting patient:", error);
+                });
+        }
+    }
+
+    /**
+     * Handle patient form submission
+     */
+    patientForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const name = document.getElementById("patient-name").value.trim();
+
+        if (!selectedInjury || !selectedPainLevel) {
+            alert("Select injury type and pain level.");
+            return;
+        }
+
+        fetch("/patients", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, injuryType: selectedInjury, painLevel: selectedPainLevel }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                alert("Patient added successfully!");
+                waitTimeDisplay.textContent = `Estimated Wait Time: ${data.estimated_wait_time || "N/A"} minutes.`;
             })
             .catch((error) => {
-                console.error("Error deleting patient:", error);
-                alert("Failed to delete patient.");
+                console.error("Error adding patient:", error);
             });
-    }
+    });
+
+    // Set injury selection with alert
+    document.querySelectorAll(".injury-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+            selectedInjury = this.value;
+            alert(`Selected injury: ${selectedInjury}`);
+        });
+    });
+
+    // Set pain level selection with alert
+    document.querySelectorAll(".pain-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+            selectedPainLevel = this.value;
+            alert(`Selected pain level: ${selectedPainLevel}`);
+        });
+    });
 });
